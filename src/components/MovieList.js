@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
-import { searchMovies } from '../api';
 import { Link } from 'react-router-dom';
 import '../MovieList.css'; // Import the CSS file
 
 const MovieList = () => {
   const [query, setQuery] = useState('');
   const [movies, setMovies] = useState([]);
+  const [error, setError] = useState('');
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    const response = await searchMovies(query);
-    setMovies(response.data.Search || []);
+    try {
+      const response = await fetch(`https://www.omdbapi.com/?s=${query}&apikey=ebd0393f`);
+      const data = await response.json();
+
+      if (data.Response === 'True') {
+        setMovies(data.Search || []);
+        setError(''); // Clear any previous errors
+      } else {
+        setMovies([]);
+        setError('No movies found.');
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to fetch movies. Please try again later.');
+    }
   };
 
   return (
@@ -26,6 +39,7 @@ const MovieList = () => {
         />
         <button type="submit">Search</button>
       </form>
+      {error && <div className="error-message">{error}</div>}
       <div className="movie-list">
         {movies.map((movie) => (
           <div key={movie.imdbID}>
